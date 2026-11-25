@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import struct
+import subprocess
 from contextlib import closing
 from pathlib import Path
 
@@ -102,10 +103,44 @@ def write_manifest(source_manifest: Path, dest: Path, blocks: list[list[int]]) -
     (dest / "manifest.json").write_text(json.dumps(out), encoding="utf-8")
 
 
+def _windows_path(path: Path) -> str | None:
+    text = path.resolve().as_posix()
+    if len(text) < 7 or not text.startswith("/mnt/") or text[6] != "/":
+        return None
+    return text[5].upper() + ":\\" + text[7:].replace("/", "\\")
+
+
+def link_source_dirs(export_dir: Path, dest: Path) -> None:
+    """The material reader opens ``<export>/meshes/<id>.gltf`` beside the placements.
+
+    The manifest already points mesh import at ``../bree``. These links serve that
+    second lookup without copying the mesh library. Unreal runs on Windows, so a
+    drvfs tree gets a junction rather than a Linux symlink.
+    """
+    for name in ("meshes", "textures"):
+        link = dest / name
+        target = export_dir / name
+        if link.is_symlink():
+            link.unlink()
+        elif link.exists():
+            continue
+        link_win = _windows_path(link)
+        target_win = _windows_path(target)
+        if link_win and target_win:
+            subprocess.run(
+                ["cmd.exe", "/c", "mklink", "/J", link_win, target_win],
+                check=True,
+                cwd="/mnt/c",
+            )
+            continue
+        link.symlink_to(Path("..") / export_dir.name / name, target_is_directory=True)
+
+
 def publish(db_path: Path, export_dir: Path, dest: Path) -> dict[str, int]:
     export_dir = Path(export_dir)
     dest = Path(dest)
     dest.mkdir(parents=True, exist_ok=True)
+    link_source_dirs(export_dir, dest)
     with closing(connect(db_path, readonly=True)) as db:
         region = Region(db)
         tiles = write_terrain(region, export_dir / "terrain" / "1", dest)
