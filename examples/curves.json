@@ -1,0 +1,55 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "west",
+      "properties": {
+        "source_kind": "unclassified_curve",
+        "flow_link": {
+          "curve_id": "curve-001",
+          "start_node": "entrance",
+          "end_node": "edge-4"
+        }
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            100,
+            206
+          ],
+          [
+            108,
+            207
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "east",
+      "properties": {
+        "source_kind": "unclassified_curve",
+        "flow_link": {
+          "curve_id": "curve-001",
+          "start_node": "corner",
+          "end_node": "edge-4"
+        }
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            118,
+            207
+          ],
+          [
+            108,
+            207
+          ]
+        ]
+      }
+    }
+  ]
+}
